@@ -1,2 +1,2 @@
 # BlockchainAnalyzer
-Python Script for analyzing Graft Blockchain
+Python Scripts for analyzing Graft Blockchain
