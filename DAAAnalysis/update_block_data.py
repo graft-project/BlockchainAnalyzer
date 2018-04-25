@@ -14,16 +14,21 @@ def update_block_data(data_file, daemon_address):
     if not os.path.isabs(csv_path):
         csv_path = os.path.join(APP_ROOT, csv_path)
     first_block = 1
-    with open(csv_path, 'r') as f:
-        last_line = f.readlines()[-1]
-        first_block = int(last_line.split(',')[0]) + 1
-        f.close()
+    if os.path.exists(csv_path):
+        with open(csv_path, 'r') as f:
+            last_line = f.readlines()[-1]
+            first_block = int(last_line.split(',')[0]) + 1
+            f.close()
     last_block = 0
     response = get_info(url)['result']
     if response["status"] == "OK":
         last_block = response["height"]
     block_data = collect_daa_data(url, first_block, last_block)
-    with open(csv_path, 'a') as f:
+    write_mod = 'a'
+    if not os.path.exists(csv_path):
+        write_mod = 'w'
+        os.mkdir(os.path.dirname(csv_path))
+    with open(csv_path, write_mod) as f:
         writer = csv.writer(f)
         for data_row in block_data:
             writer.writerow(data_row)
