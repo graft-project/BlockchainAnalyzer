@@ -8,7 +8,7 @@ import os
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 
 
-def update_block_data(data_file, daemon_address):
+def update_block_data(data_file, daemon_address, parts=20000):
     url = DAEMON_RPC_URL.format(daemon_address)
     csv_path = data_file
     if not os.path.isabs(csv_path):
@@ -23,15 +23,19 @@ def update_block_data(data_file, daemon_address):
     response = get_info(url)['result']
     if response["status"] == "OK":
         last_block = response["height"]
-    block_data = collect_daa_data(url, first_block, last_block)
-    write_mod = 'a'
-    if not os.path.exists(csv_path):
-        write_mod = 'w'
-        os.mkdir(os.path.dirname(csv_path))
-    with open(csv_path, write_mod) as f:
-        writer = csv.writer(f)
-        for data_row in block_data:
-            writer.writerow(data_row)
+    for inx in range(0, (last_block - first_block) / parts + 1, 1):
+        f_block = first_block + parts * inx
+        l_block = f_block + parts if f_block + parts < last_block else last_block
+        block_data = collect_daa_data(url, f_block, l_block)
+        write_mod = 'a'
+        if not os.path.exists(csv_path):
+            write_mod = 'w'
+            if not os.path.exists(os.path.dirname(csv_path)):
+                os.mkdir(os.path.dirname(csv_path))
+        with open(csv_path, write_mod) as f:
+            writer = csv.writer(f)
+            for data_row in block_data:
+                writer.writerow(data_row)
 
 
 def main():
@@ -41,8 +45,10 @@ def main():
                         help="Enable log for script.")
     parser.add_argument("--daemon_address", type=str, required=False, default="localhost:28981",
                         help="ending block height")
+    parser.add_argument("--parts", type=int, required=False, default=20000,
+                        help="The number of blocks for splitting updating process into parts.")
     args = parser.parse_args()
-    update_block_data(args.data_file, args.daemon_address)
+    update_block_data(args.data_file, args.daemon_address, args.parts)
 
 
 if __name__ == "__main__":
